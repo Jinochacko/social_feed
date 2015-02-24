@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Social Feed</title>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../js/socialFeed.js"></script>
+<link rel="stylesheet" href="../css/socialFeed.css" type="text/css" media="screen"></link>
+<style type="text/css">
+	#demo {width: 80%;margin: 50px auto 50px;}
+</style>
+</head>
+<body>
+
+<h1>Social Feed Demo</h1>
+<button type="button" onclick="filter('all');">All</button>
+<button type="button" onclick="filter('facebook');">FB filter</button>
+<button type="button" onclick="filter('youtube');">Yt filter</button>
+<button type="button" onclick="filter('pinterest');">Pin filter</button>
+<button type="button" onclick="filter('instagram');">Insta filter</button>
+<p id="demo"></p>
+
+<script>
+function filter(filteredBy){
+	$('#demo').filterFeed(filteredBy);
+}
+
+$('#demo').socialFeed({
+	networks: [
+	   {socialMedia: 'youtube', get: {option: 'search', search: 'icc world cup 2015'}, limit:10},
+	   {socialMedia: 'youtube', get: {option: 'standard'}, limit: 10},
+	   {socialMedia: 'youtube', get: {option: 'locationid', locationId: 'US'}},
+	   {socialMedia: 'youtube', get: {option: 'locationcategory', locationId: 'BR', category: "Entertainment"}},
+	   {socialMedia: 'youtube', get: {option: 'user', userId: 'TheNewyorkTimes'}, limit: 10},
+	   {socialMedia: 'pinterest', user: 'learaulevna/design-interior', limit: 10},
+	   {socialMedia: 'pinterest', user: 'nighthub', limit: 10},
+	   {socialMedia: 'pinterest', user: 'calliecooper5/for-the-home', limit: 10},
+	   {socialMedia: 'facebook', user: 'BusinessToday'},
+	   {socialMedia: 'facebook', user: 'nighthub'},
+	   {socialMedia: 'facebook', user: 'page4uall'},
+	   {socialMedia: 'facebook', user: 'miyaonline'},
+	   {socialMedia: 'instagram', get: {option: 'tagged', tagName: 'joker'}, limit: 10, clientId: 'ede7cb0277be4d4f8e8cba198cedb22b'},
+	   {socialMedia: 'instagram', get: {option: 'tagged', tagName: 'wontgiveitback'}, limit: 10, clientId: 'ede7cb0277be4d4f8e8cba198cedb22b'},
+	   {socialMedia: 'instagram', get: {option: 'popular'}, limit: 10, clientId: 'ede7cb0277be4d4f8e8cba198cedb22b'},
+	   {socialMedia: 'instagram', get: {option: 'location', locationId: '545331'}, limit: 10, clientId: 'ede7cb0277be4d4f8e8cba198cedb22b'}
+	],
+	noOfFeeds: 10
+});
+</script>
+
+</body>
+</html> 
