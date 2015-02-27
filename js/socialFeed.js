@@ -14,7 +14,8 @@
 				youtube: '../img/social-icons/youtube.png',
 				pinterest: '../img/social-icons/pintereset.png',
 				instagram: '../img/social-icons/instagram.ico'
-			}
+			},
+			loaderType: 'default'
 		};
 	    masonryVars = {
 	        srcNode: '.social_feed_item',             // grid items (class, node)
@@ -22,7 +23,7 @@
 	        width: '200px',             // grid item width in pixel, default: 220px
 	        max_width: '',              // dynamic gird item width if specified, (pixel)
 	        resizable: true,           // re-layout if window resize
-	        transition: 'all 1s ease' // support transition for CSS3, default: all 0.5s ease
+	        transitionTiming: 1000 // support transition for CSS3, default: all 0.5s ease
 	    },
 		wrapperSelector = '.social_feed_wrap';
     
@@ -33,7 +34,14 @@
     
 	function hideFeedLoader(){
 		$('.loader').hide();
+		setTimeout(setheight, 1000);
 	}	    
+	
+	function setheight(){
+		feedContainerHeight = $(document).height();
+		parentFeedContainer.css('min-height', feedContainerHeight);
+        console.log(document.height - $('#footer').height());
+	}
 	
     function showFeedLoader() {
     	if($('.loader').length == 0)
@@ -49,6 +57,8 @@
 			socialIconUrl = settings.iconUrls,
 			self = $(this);
 
+		parentFeedContainer = self;
+		
 		zoomEffect = settings.zoomAndBackgroundBlur;
 		showFeedLoader();
 		if(networkLength > 0){
@@ -76,13 +86,13 @@
 			
 			switch(media){
 			 	case 'facebook': 
-			 		url = "https://graph.facebook.com/"+user+"/photos?limit="+limit;
+			 		url = $.fn.facebookUrlSelector(socialFeed)+"?limit="+limit;
 			 		$.ajax({
 			 			  url: url,
 			 			  dataType: 'jsonp',
 			 			  async: false,
 			 			  success: function(data) {
-			 				 createFbObj(data);
+			 				 createFbObj(data, socialFeed.feedType);
 			 			  }
 			 			});
 			 		break;
@@ -126,11 +136,13 @@
 			 		break;
 			}
 			
-			function createFbObj(feed){
+			function createFbObj(feed, feedType){
+				if(feed.data == undefined){ throw new Error("Facebook feed could not be loaded"); return;};
 				var fbList = '',i,
 					feedLength = feed.data.length,
 					fbObj = {},
 					icon = '';
+	            console.log(document.height - $('#footer').height());
 				
 				if(socialIconUrl.facebook != null || socialIconUrl.facebook != undefined)
 					icon = socialIconUrl.facebook;
@@ -139,15 +151,20 @@
 				
 				console.log(feed.data);
 				for ( i = 0; i < feedLength; i++) {
-					fbObj.imgUrl = feed.data[i].source;
+					if(feedType == 'photos')
+						fbObj.imgUrl = feed.data[i].source;
+					else
+						fbObj.imgUrl = feed.data[i].picture;
 					fbObj.link = feed.data[i].link;
 					fbObj.iconUrl = socialIconUrl.facebook;
 					fbObj.message = "";
 					fbObj.title = feed.data[i].from.name;
 					fbObj.socialMediaClass = "facebook";
 					
-					var fbItem = new FeedItems(fbObj);
-					fbList += fbItem.singleItem();
+					if(fbObj.imgUrl != undefined){
+						var fbItem = new FeedItems(fbObj);
+						fbList += fbItem.singleItem();
+					}
 				}
 				
 				self.append(fbList);
@@ -156,7 +173,7 @@
 			}
 			
 			function createPinObj(feed){
-				if(feed.responseData == undefined || feed.responseData == null ) throw new Error(feed.responseDetails);
+				if(feed.responseData == undefined || feed.responseData == null ){ throw new Error(feed.responseDetails); return;}
 				var pinList = '',i,
 					pinFeed = feed.responseData.feed.entries;
 					feedLength = pinFeed.length,
@@ -187,6 +204,7 @@
 			}
 			
 			function createYTObj(data){
+				if(data.feed.entry == undefined){ throw new Error("Youtube feed could not be loaded"); return;}
 				var ytList = '',i,
 					ytFeed = data.feed.entry,
 					feedLength = ytFeed.length,
@@ -223,7 +241,7 @@
 		}		
 		
 		function createInstaObj(instaFeed){
-			if(instaFeed.data == undefined) throw new Error(instaFeed.meta.error_message);
+			if(instaFeed.data == undefined){ throw new Error(instaFeed.meta.error_message); return;}
 			var instaList = '',i,
 				instaFeed = instaFeed.data,
 				feedLength = instaFeed.length,
@@ -289,6 +307,25 @@
 		    }
 		} 
 	};
+  
+	$.fn.facebookUrlSelector = function(type) {
+		var url = "https://graph.facebook.com/"+type.user;
+		switch (type.feedType) {
+	        case "photos":
+	        	url += "/photos";
+	            break;
+	        case "posts":
+	        	url += "/posts";
+	            break;
+	        case "feed":
+	        	url += "/feed";
+	            break;
+	    }
+		
+	    return url;
+		
+	};
+	
   
 	$.fn.instaUrlSelector = function(type) {
 		var url = "https://api.instagram.com/v1/";
@@ -363,6 +400,7 @@
 				$('.'+media).show();
     		}
     		this.shuffle(wrapperSelector);
+    		parentFeedContainer.css('min-height', feedContainerHeight);
 		},
         imagesLoaded: function(cb){
             var images = $(this).find('img');
@@ -385,6 +423,11 @@
         buildMasonry: function(option) {
             var $this = $(this),
                 options = option || {},
+                containerWidth = $this.width(),
+                containerHeight,
+                sigleItemHeight = 0,
+                columnCount = parseInt(containerWidth / parseInt(options.width)),
+                itemLength = 0,
                 indexOfSmallest = function (a) {
                     var lowest = 0;
                     for (var i = 1, length = a.length; i < length; i++) {
@@ -406,9 +449,13 @@
                     
                     $this.find(options.srcNode).each(function(){
                     	if($(this).css('display') == 'block'){
+                    		/*if($(this).height() > sigleItemHeight)
+                            sigleItemHeight += $(this).height();
+                            itemLength += 1;*/
                     		items.push($(this));
                     	}
                     });
+                    //columnCount != 0 ? containerHeight = parseInt(sigleItemHeight / columnCount) : containerHeight = parseInt(sigleItemHeight);
                     
                     
                     if (options.max_width) {
@@ -427,17 +474,22 @@
                         $item.css({
                             'width': item_width,
                             'position': 'absolute',
-                            'margin': item_margin/2,
+                            'margin': item_margin/2/*,
                             'top': columns[idx] + item_margin/2,
                             'left': (item_width + item_margin) * idx + left,
                             'transition': transition,
                             '-moz-transition': transition,
-                            '-webkit-transition': transition
+                            '-webkit-transition': transition*/
                         });
+                        $item.animate({top: columns[idx] + item_margin/2, left: (item_width + item_margin) * idx + left},options.transitionTiming);
                         if(zoomEffect)
                         	$item.addClass('feed_zoom');
                         columns[idx] += $item.innerHeight() + item_margin;
+                        /*document.height - containerHeight > 100 ? containerHeight = document.height - containerHeight : containerHeight = containerHeight;
+                        
+                        $this.css('min-height', containerHeight + columnCount * itemLength);*/
                     }
+                    
                 };
 
             $this.imagesLoaded(render);
