@@ -90,7 +90,7 @@
 			 		var ext = socialFeed.user.split('/').length > 1 ? '/rss' : '/feed.rss',
 			 			href = "http://www.pinterest.com/"+user;
 			 		
-			 		url = 'http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num='+limit+'&callback=?&q=' + encodeURIComponent(href+ext);
+			 		url = 'https://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num='+limit+'&callback=?&q=' + encodeURIComponent(href+ext);
 			 		$.ajax({
 			 			  url: url,
 			 			  dataType: 'jsonp',
